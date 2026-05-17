@@ -56,6 +56,30 @@ patch-checker scan --hosts hosts.txt --json
 | 1 | 未対策CVEあり |
 | 2 | 実行エラー |
 
+## 検知信頼性
+
+各CVEの恒久対策判定には **信頼性スコア（HIGH/MEDIUM/LOW）** が付与されます。
+
+| 信頼性 | 条件 | 例 |
+|---|---|---|
+| HIGH | changelogにCVE IDが記載されている | Ubuntu/RHEL でchangelogヒット |
+| MEDIUM | changelog存在・CVE未記載 かつ バージョン比較が信頼可能なディストリ | Fedora, Debian, openSUSE Tumbleweed |
+| LOW | changelog不在 / ELSモード / バージョン比較が信頼できないディストリ | Ubuntu, RHEL, SLES（changelogミス時） |
+
+**LOW判定のFIXEDは `MANUAL_CHECK_REQUIRED` に格上げ**されます（false negativeを防ぐため）。
+
+### ディストリビューション別の信頼性
+
+| ディストリ | バージョン比較の信頼性 | 理由 |
+|---|---|---|
+| Ubuntu / RHEL / AlmaLinux / Rocky / SLES | 低 | `uname -r` がパッケージバージョンと乖離 |
+| Fedora / Debian / openSUSE Tumbleweed / 汎用 | 高 | mainline寄りのバージョン表記 |
+| RHEL 7 / SLES 12 / Ubuntu 16.04-18.04 (ELS) | ELS | バックポートの可能性あり→常にLOW |
+
+### 低信頼度環境での警告
+
+WSL2、汎用カーネル、ELS環境では出力の冒頭に警告メッセージが表示されます。
+
 ## 恒久対策について
 
 恒久対策（カーネルアップグレード）はコマンド提示のみ行います。自動実行はしません。

@@ -66,3 +66,13 @@ def test_fragnesia_modules():
     assert "esp4" in fragnesia.modules
     assert "esp6" in fragnesia.modules
     assert "rxrpc" in fragnesia.modules
+
+
+def test_version_comparison_reliable_for():
+    cves = load_cves()
+    expected = ["generic", "fedora", "debian", "opensuse-tumbleweed"]
+    assert cves["CVE-2026-31431"].version_comparison_reliable_for == expected
+    assert cves["CVE-2026-43284"].version_comparison_reliable_for == expected
+    assert cves["CVE-2026-43500"].version_comparison_reliable_for == expected
+    assert cves["CVE-2026-46300"].version_comparison_reliable_for == []
+    assert cves["CVE-2026-46333"].version_comparison_reliable_for == []

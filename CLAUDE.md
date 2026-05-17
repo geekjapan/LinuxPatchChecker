@@ -55,6 +55,13 @@ patch_checker/
 
 **検知フロー**: `detect_all()` が各CVEに対してモジュール状態（lsmod）とchangelogグレップ（Ubuntu: gz、RHEL: rpm -q --changelog）を組み合わせて判定する。changelogが存在しない場合は `uname -r` バージョン比較にフォールバック。
 
+各CVEの恒久対策判定には信頼性スコア（HIGH/MEDIUM/LOW）が付与される（`_compute_confidence()`）:
+- HIGH: changelogグレップヒット
+- MEDIUM: changelog存在・CVE未記載 かつ `version_comparison_reliable_for`（cves.yaml）に含まれるディストリ
+- LOW: changelog不在 / ELSモード / 信頼マップ外のディストリ
+
+LOW + FIXED は `MANUAL_CHECK_REQUIRED` に格上げされる（false negative防止）。ELS環境（RHEL 7/SLES 12/Ubuntu 16.04-18.04）は `distro.py:ELS_DISTROS` / `ELS_DISTRO_PREFIXES` で判定。
+
 **SSH scanモード**: `ssh.py` がリモートホストで個別コマンド（uname/lsmod/sysctl/changelog grep）を実行し、結果をローカルで `detect_all()` に渡す。Python不要。
 
 **CVEデータの更新**: `patch_checker/data/cves.json` のみ編集すればよい（コード変更不要）。フィールド定義は `patch_checker/data/cves.schema.md` 参照。

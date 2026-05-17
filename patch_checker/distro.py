@@ -5,6 +5,25 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+ELS_DISTROS: frozenset = frozenset({
+    ("ubuntu", "16.04"),
+    ("ubuntu", "18.04"),
+})
+
+# Prefix-matched ELS: VERSION_ID "7", "7.9", "12", "12.5" etc. all match
+ELS_DISTRO_PREFIXES: frozenset = frozenset({
+    ("rhel", "7"),
+    ("centos", "7"),
+    ("sles", "12"),
+})
+
+
+def is_els_distro(distro_id: str, version_id: str) -> bool:
+    if (distro_id, version_id) in ELS_DISTROS:
+        return True
+    return any(distro_id == d and (version_id == v or version_id.startswith(v + ".")) for d, v in ELS_DISTRO_PREFIXES)
+
+
 @dataclass(order=True)
 class KernelVersion:
     major: int
@@ -29,12 +48,15 @@ class DistroInfo:
     kernel_version_str: str
     changelog_source: dict
     hostname: str
+    is_els: bool = False
+    package_kernel_version: Optional[str] = None
 
 
 def detect_distro(
     os_release_content: Optional[str] = None,
     uname_r: Optional[str] = None,
 ) -> DistroInfo:
+    is_local = os_release_content is None
     if os_release_content is None:
         try:
             with open("/etc/os-release") as f:
@@ -73,7 +95,9 @@ def detect_distro(
         distro = "centos"
     elif distro_id == "sles" or "sles" in id_like:
         distro = "sles"
-    elif distro_id in ("opensuse", "opensuse-leap", "opensuse-tumbleweed"):
+    elif distro_id == "opensuse-tumbleweed":
+        distro = "opensuse-tumbleweed"
+    elif distro_id in ("opensuse", "opensuse-leap"):
         distro = "opensuse"
     else:
         distro = "generic"
@@ -84,6 +108,10 @@ def detect_distro(
         kv = KernelVersion(0, 0, 0)
 
     changelog_source = get_changelog_source(distro, uname_r)
+
+    version_id = fields.get("VERSION_ID", "")
+    is_els = is_els_distro(distro_id, version_id)
+    package_kernel_version = get_package_kernel_version(distro, uname_r) if is_local else None
 
     try:
         hostname = socket.gethostname()
@@ -96,7 +124,30 @@ def detect_distro(
         kernel_version_str=uname_r,
         changelog_source=changelog_source,
         hostname=hostname,
+        is_els=is_els,
+        package_kernel_version=package_kernel_version,
     )
+
+
+def get_package_kernel_version(distro: str, uname_r: str) -> Optional[str]:
+    try:
+        if distro in ("ubuntu", "debian"):
+            result = subprocess.run(
+                ["dpkg-query", "-W", "-f", "${Version}", f"linux-image-{uname_r}"],
+                capture_output=True, text=True, timeout=1,
+            )
+            return result.stdout.strip() or None
+        if distro in ("rhel", "almalinux", "rocky", "fedora", "centos", "sles", "opensuse", "opensuse-tumbleweed"):
+            pkg = "kernel-default" if distro in ("sles", "opensuse", "opensuse-tumbleweed") else "kernel"
+            result = subprocess.run(
+                ["rpm", "-q", "--qf", "%{VERSION}-%{RELEASE}\n", pkg],
+                capture_output=True, text=True, timeout=1,
+            )
+            lines = result.stdout.strip().splitlines()
+            return lines[-1] if lines else None
+    except Exception:
+        return None
+    return None
 
 
 def get_kernel_version(uname_r: Optional[str] = None) -> KernelVersion:
@@ -110,6 +161,6 @@ def get_changelog_source(distro: str, uname_r: str) -> dict:
         return {"type": "gz", "path": f"/usr/share/doc/linux-image-{uname_r}/changelog.Debian.gz"}
     if distro in ("rhel", "almalinux", "rocky", "fedora", "centos"):
         return {"type": "rpm", "package": "kernel"}
-    if distro in ("sles", "opensuse"):
+    if distro in ("sles", "opensuse", "opensuse-tumbleweed"):
         return {"type": "rpm", "package": "kernel-default"}
     return {"type": "none"}
