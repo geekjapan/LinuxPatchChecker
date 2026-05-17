@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install shiv
+        run: pip install shiv
+
+      - name: Build
+        run: make build
+
+      - name: Checksums
+        run: make checksums
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: dist/SHA256SUMS
+          files: |
+            dist/patch-checker-check.pyz
+            dist/patch-checker-scan.pyz
+            dist/SHA256SUMS

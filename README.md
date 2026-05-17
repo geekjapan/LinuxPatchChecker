@@ -84,3 +84,60 @@ WSL2、汎用カーネル、ELS環境では出力の冒頭に警告メッセー�
 
 恒久対策（カーネルアップグレード）はコマンド提示のみ行います。自動実行はしません。
 各ディストリビューションのアップグレードコマンドはスキャン結果に表示されます。
+
+## オフライン環境への配布
+
+インターネット未接続のターゲットホストには、単一ファイル（.pyz）を転送して実行できます。
+
+### ファイル種別の使い分け
+
+| | patch-checker-check.pyz | patch-checker-scan.pyz |
+|---|---|---|
+| 用途 | target host 上で実行（検知・暫定対策適用） | 管理ホスト上で実行（SSH一括スキャン） |
+| Python 依存 | stdlib のみ（Python 3.8+） | stdlib + paramiko 同梱 |
+| サイズ | 小（~80KB） | 大（paramiko 同梱） |
+| check サブコマンド | ✅ | ✅ |
+| scan サブコマンド | ❌（エラーメッセージを表示） | ✅ |
+
+### ダウンロード
+
+```bash
+# wget
+wget https://github.com/<owner>/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
+wget https://github.com/<owner>/LinuxPatchChecker/releases/latest/download/SHA256SUMS
+
+# curl
+curl -LO https://github.com/<owner>/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
+curl -LO https://github.com/<owner>/LinuxPatchChecker/releases/latest/download/SHA256SUMS
+```
+
+### SHA256 検証
+
+```bash
+# Linux
+sha256sum -c SHA256SUMS
+
+# macOS
+shasum -a 256 -c SHA256SUMS
+```
+
+### 手動転送（scp）
+
+```bash
+scp patch-checker-check.pyz user@targethost:/tmp/
+ssh user@targethost "python3 /tmp/patch-checker-check.pyz check"
+```
+
+### 実行
+
+```bash
+python3 patch-checker-check.pyz check
+python3 patch-checker-check.pyz check --json
+python3 patch-checker-check.pyz --version
+```
+
+## CVEデータの更新
+
+CVEメタデータは `patch_checker/data/cves.json` に集約されています。コードを変更せずにこのファイルを直接編集することで、影響バージョン範囲・暫定対策・恒久対策コマンドを追加・変更できます。
+
+各フィールドの意味・型・必須要件は `patch_checker/data/cves.schema.md` を参照してください。
