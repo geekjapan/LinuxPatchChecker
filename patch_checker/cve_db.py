@@ -1,8 +1,7 @@
+import json
 import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
-
-import yaml
 
 
 @dataclass
@@ -21,9 +20,9 @@ class CVEEntry:
 
 
 def load_cves() -> Dict[str, CVEEntry]:
-    data_path = os.path.join(os.path.dirname(__file__), "data", "cves.yaml")
+    data_path = os.path.join(os.path.dirname(__file__), "data", "cves.json")
     with open(data_path) as f:
-        raw = yaml.safe_load(f)
+        raw = json.load(f)
     result: Dict[str, CVEEntry] = {}
     for entry in raw["cves"]:
         cve = CVEEntry(
