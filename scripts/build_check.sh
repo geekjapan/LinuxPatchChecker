@@ -4,16 +4,19 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$REPO_ROOT/dist"
 
-# ssh.py を除外した一時ディレクトリを作成してビルド
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
-cp -r "$REPO_ROOT/patch_checker" "$TMPDIR/patch_checker"
-rm -f "$TMPDIR/patch_checker/ssh.py"
-rm -f "$TMPDIR/patch_checker/__pycache__/ssh.cpython-"*.pyc
+# zipapp はルートを sys.path に追加するため、
+# patch_checker/ をサブディレクトリとして置く必要がある
+PKGROOT="$TMPDIR/root"
+mkdir -p "$PKGROOT"
+cp -r "$REPO_ROOT/patch_checker" "$PKGROOT/patch_checker"
+rm -f "$PKGROOT/patch_checker/ssh.py"
+find "$PKGROOT" -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 python3 -m zipapp \
-    "$TMPDIR/patch_checker" \
+    "$PKGROOT" \
     -p '/usr/bin/env python3' \
     -o "$REPO_ROOT/dist/patch-checker-check.pyz" \
     -m 'patch_checker.cli:main'

@@ -1,5 +1,5 @@
 import json
-import os
+import pkgutil
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
@@ -20,9 +20,10 @@ class CVEEntry:
 
 
 def load_cves() -> Dict[str, CVEEntry]:
-    data_path = os.path.join(os.path.dirname(__file__), "data", "cves.json")
-    with open(data_path) as f:
-        raw = json.load(f)
+    data_bytes = pkgutil.get_data("patch_checker", "data/cves.json")
+    if data_bytes is None:
+        raise FileNotFoundError("patch_checker/data/cves.json が見つかりません")
+    raw = json.loads(data_bytes.decode("utf-8"))
     result: Dict[str, CVEEntry] = {}
     for entry in raw["cves"]:
         cve = CVEEntry(

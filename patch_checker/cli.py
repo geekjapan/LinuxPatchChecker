@@ -58,7 +58,7 @@ def cmd_scan(args) -> None:
     try:
         from .ssh import scan_hosts
     except ImportError:
-        print("エラー: scanコマンドはpatch-checker-scan.pyzまたはpip install版で使用してください。", file=sys.stderr)
+        print('エラー: scanコマンドはpatch-checker-scan.pyzを使用するか、pip install "linux-patch-checker[scan]" を実行してください。', file=sys.stderr)
         raise SystemExit(2)
 
     hosts = _resolve_hosts(args)
