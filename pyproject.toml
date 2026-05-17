@@ -15,6 +15,9 @@ scan = ["paramiko>=3.0"]
 [tool.setuptools.packages.find]
 include = ["patch_checker*"]
 
+[tool.setuptools.package-data]
+patch_checker = ["data/*.json"]
+
 [project.scripts]
 patch-checker = "patch_checker.cli:main"
 
