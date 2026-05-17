@@ -18,6 +18,7 @@ class CVEEntry:
     sysctl_key: Optional[str] = None
     sysctl_value: Optional[int] = None
     permanent_fix_commands: Dict[str, str] = field(default_factory=dict)
+    version_comparison_reliable_for: List[str] = field(default_factory=list)
 
 
 def load_cves() -> Dict[str, CVEEntry]:
@@ -38,6 +39,7 @@ def load_cves() -> Dict[str, CVEEntry]:
             sysctl_key=entry.get("sysctl_key"),
             sysctl_value=entry.get("sysctl_value"),
             permanent_fix_commands=entry.get("permanent_fix_commands", {}),
+            version_comparison_reliable_for=entry.get("version_comparison_reliable_for", []),
         )
         result[cve.cve_id] = cve
     return result
