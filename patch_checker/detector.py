@@ -13,6 +13,10 @@ FIXED = "FIXED"
 VULNERABLE = "VULNERABLE"
 MANUAL_CHECK_REQUIRED = "MANUAL_CHECK_REQUIRED"
 
+HIGH = "HIGH"
+MEDIUM = "MEDIUM"
+LOW = "LOW"
+
 
 @dataclass
 class CVEResult:
@@ -23,6 +27,7 @@ class CVEResult:
     recommended_action: str
     detection_method: str
     notes: str = ""
+    detection_confidence: str = HIGH
 
 
 def grep_changelog(
@@ -62,31 +67,54 @@ def _in_affected_range(kv: KernelVersion, affected_ranges: list) -> bool:
     return False
 
 
+def _compute_confidence(
+    cve: "CVEEntry",
+    distro_info: DistroInfo,
+    changelog_hit: bool,
+) -> str:
+    if changelog_hit:
+        return HIGH
+    if distro_info.is_els:
+        return LOW
+    if distro_info.changelog_source["type"] == "none":
+        return LOW
+    if distro_info.distro in cve.version_comparison_reliable_for:
+        return MEDIUM
+    return LOW
+
+
 def detect_permanent_fix(
     cve: CVEEntry,
     distro_info: DistroInfo,
     remote_outputs: Optional[dict] = None,
-) -> Tuple[str, str, str]:
-    """Returns (status, detection_method, notes)."""
+) -> Tuple[str, str, str, str]:
+    """Returns (status, detection_method, notes, confidence)."""
     if cve.reserved:
-        return MANUAL_CHECK_REQUIRED, "reserved", "CVEはRESERVEDステータスのため手動確認が必要"
+        return MANUAL_CHECK_REQUIRED, "reserved", "CVEはRESERVEDステータスのため手動確認が必要", LOW
 
     source = distro_info.changelog_source
+    changelog_hit = False
     if source["type"] != "none":
-        if grep_changelog(cve.cve_id, source, remote_outputs):
-            return FIXED, "changelog_grep", ""
+        changelog_hit = grep_changelog(cve.cve_id, source, remote_outputs)
+        if changelog_hit:
+            return FIXED, "changelog_grep", "", HIGH
         method = "version_comparison"
         notes = ""
     else:
         method = "version_comparison_fallback"
         notes = "changelogが利用不可のためカーネルバージョン比較のみ使用（精度が低い場合があります）"
 
+    confidence = _compute_confidence(cve, distro_info, changelog_hit)
+
     if not cve.affected_ranges:
-        return MANUAL_CHECK_REQUIRED, method, notes + " (影響バージョン範囲未定義)"
+        return MANUAL_CHECK_REQUIRED, method, notes + " (影響バージョン範囲未定義)", confidence
 
     if _in_affected_range(distro_info.kernel_version, cve.affected_ranges):
-        return VULNERABLE, method, notes
-    return FIXED, method, notes
+        return VULNERABLE, method, notes, confidence
+
+    if confidence == LOW:
+        return MANUAL_CHECK_REQUIRED, method, notes, confidence
+    return FIXED, method, notes, confidence
 
 
 def detect_module_mitigation(
@@ -162,7 +190,7 @@ def detect_all(
         else:
             mit_status = NOT_MITIGATED
 
-        perm_status, method, notes = detect_permanent_fix(cve, distro_info, remote_outputs)
+        perm_status, method, notes, confidence = detect_permanent_fix(cve, distro_info, remote_outputs)
         action = _recommended_action(cve, mit_status, perm_status, distro_info.distro)
 
         results.append(CVEResult(
@@ -173,6 +201,7 @@ def detect_all(
             recommended_action=action,
             detection_method=method,
             notes=notes,
+            detection_confidence=confidence,
         ))
 
     return results
