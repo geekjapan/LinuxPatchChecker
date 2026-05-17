@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from . import __version__
 from .cve_db import load_cves
 from .detector import detect_all
 from .distro import detect_distro
@@ -106,6 +107,7 @@ def main() -> None:
         prog="patch-checker",
         description="Linux Kernel LPE CVE 対策状況チェッカー (2026年4-5月 CVE群)",
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     # check
