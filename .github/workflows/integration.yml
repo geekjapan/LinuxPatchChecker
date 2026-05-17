@@ -49,8 +49,8 @@ jobs:
 
       - name: check exits 0 or 1
         run: |
-          python3 dist/patch-checker.pyz check; code=$?
-          [ $code -le 1 ]
+          python3 dist/patch-checker.pyz check && code=0 || code=$?
+          [ "$code" -le 1 ] || { echo "unexpected exit code: $code"; exit 1; }
 
       - name: --json produces valid output
         run: |
