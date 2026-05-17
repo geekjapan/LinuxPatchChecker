@@ -108,9 +108,10 @@ class TestDetectPermanentFix:
         cves = load_cves()
         distro = _make_distro(distro="generic", changelog_type="none")
         distro.changelog_source = {"type": "none"}
-        status, method, notes, _c = detect_permanent_fix(cves["CVE-2026-31431"], distro)
+        status, method, notes, confidence = detect_permanent_fix(cves["CVE-2026-31431"], distro)
         assert method == "version_comparison_fallback"
         assert "changelog" in notes
+        assert confidence == LOW
 
 
 class TestModuleMitigation:

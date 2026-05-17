@@ -68,7 +68,7 @@ def _in_affected_range(kv: KernelVersion, affected_ranges: list) -> bool:
 
 
 def _compute_confidence(
-    cve: "CVEEntry",
+    cve: CVEEntry,
     distro_info: DistroInfo,
     changelog_hit: bool,
 ) -> str:
