@@ -18,16 +18,14 @@ Ubuntu, Debian, RHEL, AlmaLinux, Rocky Linux, Fedora, CentOS Stream, SLES, openS
 
 ---
 
-## 実行手順
+## ローカル実行（target host で直接実行）
+
+`patch-checker.pyz` を target host に転送して実行します。Python 3.8+ のみ必要で、追加パッケージ不要です。
 
 ### ダウンロード
 
 ```bash
-# 検知・暫定対策適用用（target host で実行）
 curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker.pyz
-
-# SSH一括スキャン用（管理ホストで実行）
-curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-ssh.pyz
 ```
 
 ### 検知
@@ -45,9 +43,19 @@ sudo python3 patch-checker.pyz check --apply
 sudo python3 patch-checker.pyz check --apply --force   # 使用中モジュールも強制適用
 ```
 
-### SSH経由での複数ホスト一括スキャン
+---
 
-管理ホスト上で `patch-checker-ssh.pyz` を使用します（[ファイル種別](#ファイル種別の使い分け)参照）。
+## SSH実行（管理ホストから複数ホストを一括スキャン）
+
+`patch-checker-ssh.pyz` を管理ホストで実行します。target host への Python インストールは不要です。
+
+### ダウンロード
+
+```bash
+curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-ssh.pyz
+```
+
+### スキャン
 
 ```bash
 python3 patch-checker-ssh.pyz scan host1 host2 host3
