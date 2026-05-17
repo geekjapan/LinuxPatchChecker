@@ -23,7 +23,11 @@ Ubuntu, Debian, RHEL, AlmaLinux, Rocky Linux, Fedora, CentOS Stream, SLES, openS
 ### ダウンロード
 
 ```bash
+# 検知・暫定対策適用用（target host で実行）
 curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
+
+# SSH一括スキャン用（管理ホストで実行）
+curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-scan.pyz
 ```
 
 ### 検知
@@ -65,12 +69,6 @@ python3 patch-checker-scan.pyz scan --hosts hosts.txt --json
 | サイズ | 小（~80KB） | 大（paramiko 同梱） |
 | check サブコマンド | ✅ | ✅ |
 | scan サブコマンド | ❌（エラーメッセージを表示） | ✅ |
-
-`patch-checker-scan.pyz` のダウンロード:
-
-```bash
-curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-scan.pyz
-```
 
 ### SHA256 検証
 
