@@ -90,6 +90,8 @@ class TestFormatJson:
         assert r["permanent_fix_status"] == FIXED
         assert "recommended_action" in r
         assert "detection_method" in r
+        assert "detection_confidence" in r
+        assert r["detection_confidence"] in (HIGH, MEDIUM, LOW)
 
     def test_apply_results_included(self):
         results = [_make_result()]

@@ -244,3 +244,17 @@ class TestDetectAll:
             assert r.permanent_fix_status in (FIXED, VULNERABLE, MANUAL_CHECK_REQUIRED)
             assert r.recommended_action
             assert r.detection_method
+            assert r.detection_confidence in (HIGH, MEDIUM, LOW)
+
+    def test_ubuntu_fixed_without_changelog_upgrades_to_manual_check(self):
+        """Ubuntu is untrusted distro → LOW confidence → FIXED upgrades to MANUAL_CHECK_REQUIRED"""
+        cves = load_cves()
+        # ubuntu kernel out of affected range (post-fix), no changelog hit
+        distro = _make_distro(distro="ubuntu", kernel_str="6.1.170-generic")
+        remote = {"lsmod": LSMOD_WITHOUT_ESP4,
+                  "sysctl_kernel.yama.ptrace_scope": "kernel.yama.ptrace_scope = 3\n",
+                  **{f"changelog_{cve_id}": "" for cve_id in cves}}
+        results = detect_all(cves, distro, remote)
+        copyfail = next(r for r in results if r.cve_id == "CVE-2026-31431")
+        assert copyfail.permanent_fix_status == MANUAL_CHECK_REQUIRED
+        assert copyfail.detection_confidence == LOW
