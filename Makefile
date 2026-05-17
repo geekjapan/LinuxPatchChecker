@@ -3,17 +3,15 @@
 build: build-check build-scan
 
 build-check:
-	mkdir -p dist
-	python3 -m zipapp patch_checker -p '/usr/bin/env python3' -o dist/patch-checker-check.pyz -m patch_checker.cli:main
+	bash scripts/build_check.sh
 
 build-scan:
-	mkdir -p dist
-	shiv -e patch_checker.cli:main -o dist/patch-checker-scan.pyz . --reproducible
+	bash scripts/build_scan.sh
 
 clean:
 	rm -rf dist/
 
-checksums:
+checksums: build
 	cd dist && \
 	if command -v sha256sum >/dev/null 2>&1; then \
 		sha256sum *.pyz > SHA256SUMS; \
