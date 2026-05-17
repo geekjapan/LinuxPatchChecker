@@ -104,22 +104,24 @@ WSL2、汎用カーネル、ELS環境では出力の冒頭に警告メッセー�
 ```bash
 # wget
 wget https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
-wget https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/SHA256SUMS
 
 # curl
 curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
-curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/SHA256SUMS
 ```
 
 ### SHA256 検証
 
+ハッシュはリポジトリの [`CHECKSUMS`](https://github.com/geekjapan/LinuxPatchChecker/blob/main/CHECKSUMS) で管理されています。
+
 ```bash
 # Linux
-sha256sum -c SHA256SUMS
+sha256sum patch-checker-check.pyz
 
 # macOS
-shasum -a 256 -c SHA256SUMS
+shasum -a 256 patch-checker-check.pyz
 ```
+
+出力を `CHECKSUMS` ファイルの該当行と照合してください。
 
 ### 手動転送（scp）
 
