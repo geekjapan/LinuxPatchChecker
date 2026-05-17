@@ -16,12 +16,6 @@
 
 Ubuntu, Debian, RHEL, AlmaLinux, Rocky Linux, Fedora, CentOS Stream, SLES, openSUSE, Ubuntu(WSL2), 汎用
 
-## インストール
-
-```bash
-pip install -e .
-```
-
 ## 使用方法
 
 ### ローカルホストのスキャン（検知のみ）
@@ -118,13 +112,6 @@ sha256sum patch-checker-check.pyz
 ```
 
 出力を `CHECKSUMS` ファイルの該当行と照合してください。
-
-### 手動転送（scp）
-
-```bash
-scp patch-checker-check.pyz user@targethost:/tmp/
-ssh user@targethost "python3 /tmp/patch-checker-check.pyz check"
-```
 
 ### 実行
 
