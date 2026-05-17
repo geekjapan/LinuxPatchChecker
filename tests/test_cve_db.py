@@ -70,8 +70,9 @@ def test_fragnesia_modules():
 
 def test_version_comparison_reliable_for():
     cves = load_cves()
-    assert cves["CVE-2026-31431"].version_comparison_reliable_for == [
-        "generic", "fedora", "debian", "opensuse-tumbleweed"
-    ]
+    expected = ["generic", "fedora", "debian", "opensuse-tumbleweed"]
+    assert cves["CVE-2026-31431"].version_comparison_reliable_for == expected
+    assert cves["CVE-2026-43284"].version_comparison_reliable_for == expected
+    assert cves["CVE-2026-43500"].version_comparison_reliable_for == expected
     assert cves["CVE-2026-46300"].version_comparison_reliable_for == []
     assert cves["CVE-2026-46333"].version_comparison_reliable_for == []
