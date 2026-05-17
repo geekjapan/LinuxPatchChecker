@@ -1,5 +1,7 @@
+import subprocess
+import unittest.mock
 import pytest
-from patch_checker.distro import KernelVersion, detect_distro, get_changelog_source, get_kernel_version, is_els_distro
+from patch_checker.distro import KernelVersion, detect_distro, get_changelog_source, get_kernel_version, get_package_kernel_version, is_els_distro
 
 RHEL7_RELEASE = 'ID="rhel"\nNAME="Red Hat Enterprise Linux Server"\nVERSION_ID="7"\n'
 SLES12_RELEASE = 'ID="sles"\nNAME="SLES"\nVERSION_ID="12.5"\n'
@@ -168,3 +170,48 @@ class TestIsElsDistro:
 
     def test_centos7(self):
         assert is_els_distro("centos", "7") is True
+
+
+class TestPackageKernelVersion:
+    def test_ubuntu_success(self):
+        with unittest.mock.patch("subprocess.run") as mock_run:
+            mock_run.return_value = unittest.mock.Mock(stdout="5.15.0-73.82", returncode=0)
+            result = get_package_kernel_version("ubuntu", "5.15.0-73-generic")
+        assert result == "5.15.0-73.82"
+
+    def test_ubuntu_empty_output(self):
+        with unittest.mock.patch("subprocess.run") as mock_run:
+            mock_run.return_value = unittest.mock.Mock(stdout="", returncode=1)
+            result = get_package_kernel_version("ubuntu", "5.15.0-73-generic")
+        assert result is None
+
+    def test_rhel_success(self):
+        with unittest.mock.patch("subprocess.run") as mock_run:
+            mock_run.return_value = unittest.mock.Mock(stdout="5.14.0-427.13.1.el9_4", returncode=0)
+            result = get_package_kernel_version("rhel", "5.14.0-427.13.1.el9_4.x86_64")
+        assert result == "5.14.0-427.13.1.el9_4"
+
+    def test_timeout_returns_none(self):
+        with unittest.mock.patch("subprocess.run", side_effect=subprocess.TimeoutExpired("dpkg-query", 1)):
+            result = get_package_kernel_version("ubuntu", "5.15.0-73-generic")
+        assert result is None
+
+    def test_unsupported_distro_returns_none(self):
+        result = get_package_kernel_version("generic", "6.1.0")
+        assert result is None
+
+    def test_sles_returns_none(self):
+        result = get_package_kernel_version("sles", "5.14.21-default")
+        assert result is None
+
+
+class TestDetectDistroPackageVersion:
+    def test_package_version_stored_in_distroinfo(self):
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value="5.15.0-73.82"):
+            info = detect_distro(UBUNTU_RELEASE, "5.15.0-73-generic")
+        assert info.package_kernel_version == "5.15.0-73.82"
+
+    def test_package_version_none_when_unavailable(self):
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
+            info = detect_distro(UBUNTU_RELEASE, "5.15.0-73-generic")
+        assert info.package_kernel_version is None

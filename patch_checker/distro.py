@@ -49,6 +49,7 @@ class DistroInfo:
     changelog_source: dict
     hostname: str
     is_els: bool = False
+    package_kernel_version: Optional[str] = None
 
 
 def detect_distro(
@@ -107,6 +108,7 @@ def detect_distro(
 
     version_id = fields.get("VERSION_ID", "")
     is_els = is_els_distro(distro_id, version_id)
+    package_kernel_version = get_package_kernel_version(distro, uname_r)
 
     try:
         hostname = socket.gethostname()
@@ -120,7 +122,27 @@ def detect_distro(
         changelog_source=changelog_source,
         hostname=hostname,
         is_els=is_els,
+        package_kernel_version=package_kernel_version,
     )
+
+
+def get_package_kernel_version(distro: str, uname_r: str) -> Optional[str]:
+    try:
+        if distro in ("ubuntu", "debian"):
+            result = subprocess.run(
+                ["dpkg-query", "-W", "-f", "${Version}", f"linux-image-{uname_r}"],
+                capture_output=True, text=True, timeout=1,
+            )
+            return result.stdout.strip() or None
+        if distro in ("rhel", "almalinux", "rocky", "fedora", "centos"):
+            result = subprocess.run(
+                ["rpm", "-q", "--qf", "%{VERSION}-%{RELEASE}", "kernel"],
+                capture_output=True, text=True, timeout=1,
+            )
+            return result.stdout.strip() or None
+    except Exception:
+        return None
+    return None
 
 
 def get_kernel_version(uname_r: Optional[str] = None) -> KernelVersion:
