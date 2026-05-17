@@ -175,6 +175,12 @@ class TestComputeConfidence:
         distro.is_els = False
         assert _compute_confidence(cves["CVE-2026-31431"], distro, changelog_hit=False) == LOW
 
+    def test_opensuse_tumbleweed_returns_medium(self):
+        cves = load_cves()
+        distro = _make_distro(distro="opensuse-tumbleweed")
+        distro.is_els = False
+        assert _compute_confidence(cves["CVE-2026-31431"], distro, changelog_hit=False) == MEDIUM
+
 
 class TestDetectPermanentFixConfidence:
     def test_low_fixed_upgrades_to_manual_check(self):

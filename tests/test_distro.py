@@ -4,8 +4,10 @@ import pytest
 from patch_checker.distro import KernelVersion, detect_distro, get_changelog_source, get_kernel_version, get_package_kernel_version, is_els_distro
 
 RHEL7_RELEASE = 'ID="rhel"\nNAME="Red Hat Enterprise Linux Server"\nVERSION_ID="7"\n'
+RHEL7_9_RELEASE = 'ID="rhel"\nNAME="Red Hat Enterprise Linux Server"\nVERSION_ID="7.9"\n'
 SLES12_RELEASE = 'ID="sles"\nNAME="SLES"\nVERSION_ID="12.5"\n'
 UBUNTU16_RELEASE = 'ID=ubuntu\nNAME="Ubuntu"\nVERSION_ID="16.04"\n'
+TUMBLEWEED_RELEASE = 'ID="opensuse-tumbleweed"\nNAME="openSUSE Tumbleweed"\nVERSION_ID="20240512"\n'
 UBUNTU_RELEASE = 'ID=ubuntu\nNAME="Ubuntu"\nVERSION_ID="24.04"\n'
 DEBIAN_RELEASE = 'ID=debian\nNAME="Debian GNU/Linux"\nVERSION_ID="12"\n'
 RHEL_RELEASE = 'ID="rhel"\nNAME="Red Hat Enterprise Linux"\nVERSION_ID="9"\n'
@@ -94,6 +96,10 @@ class TestDetectDistro:
         info = detect_distro(OPENSUSE_RELEASE, "5.14.21-150500.55.65-default")
         assert info.distro == "opensuse"
 
+    def test_opensuse_tumbleweed(self):
+        info = detect_distro(TUMBLEWEED_RELEASE, "6.9.0-1-default")
+        assert info.distro == "opensuse-tumbleweed"
+
     def test_generic(self):
         info = detect_distro(GENERIC_RELEASE, "6.1.0")
         assert info.distro == "generic"
@@ -120,6 +126,11 @@ class TestChangelogSource:
 
     def test_sles(self):
         src = get_changelog_source("sles", "5.14.21")
+        assert src["type"] == "rpm"
+        assert src["package"] == "kernel-default"
+
+    def test_opensuse_tumbleweed(self):
+        src = get_changelog_source("opensuse-tumbleweed", "6.9.0-1-default")
         assert src["type"] == "rpm"
         assert src["package"] == "kernel-default"
 
@@ -153,6 +164,11 @@ class TestELSDetection:
             info = detect_distro(UBUNTU_RELEASE, "6.8.0-40-generic")
         assert info.is_els is False
 
+    def test_rhel7_9_is_els(self):
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
+            info = detect_distro(RHEL7_9_RELEASE, "3.10.0-1160.99.1.el7.x86_64")
+        assert info.is_els is True
+
     def test_rhel9_not_els(self):
         with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
             info = detect_distro(RHEL_RELEASE, "5.14.0-427.13.1.el9_4.x86_64")
@@ -180,6 +196,12 @@ class TestIsElsDistro:
 
     def test_centos7(self):
         assert is_els_distro("centos", "7") is True
+
+    def test_rhel7_minor(self):
+        assert is_els_distro("rhel", "7.9") is True
+
+    def test_centos7_minor(self):
+        assert is_els_distro("centos", "7.9") is True
 
 
 class TestPackageKernelVersion:
@@ -210,18 +232,39 @@ class TestPackageKernelVersion:
         result = get_package_kernel_version("generic", "6.1.0")
         assert result is None
 
-    def test_sles_returns_none(self):
-        result = get_package_kernel_version("sles", "5.14.21-default")
-        assert result is None
+    def test_sles_success(self):
+        with unittest.mock.patch("subprocess.run") as mock_run:
+            mock_run.return_value = unittest.mock.Mock(stdout="5.14.21-150500.55.65.1\n", returncode=0)
+            result = get_package_kernel_version("sles", "5.14.21-150500.55.65-default")
+        assert result == "5.14.21-150500.55.65.1"
+
+    def test_opensuse_tumbleweed_success(self):
+        with unittest.mock.patch("subprocess.run") as mock_run:
+            mock_run.return_value = unittest.mock.Mock(stdout="6.9.0-1.1\n", returncode=0)
+            result = get_package_kernel_version("opensuse-tumbleweed", "6.9.0-1-default")
+        assert result == "6.9.0-1.1"
+
+    def test_rpm_multi_kernel_returns_last(self):
+        with unittest.mock.patch("subprocess.run") as mock_run:
+            mock_run.return_value = unittest.mock.Mock(stdout="5.14.0-362.el9\n5.14.0-427.el9\n", returncode=0)
+            result = get_package_kernel_version("rhel", "5.14.0-427.el9.x86_64")
+        assert result == "5.14.0-427.el9"
 
 
 class TestDetectDistroPackageVersion:
     def test_package_version_stored_in_distroinfo(self):
+        # Local mode (no os_release_content passed) → package lookup runs
         with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value="5.15.0-73.82"):
-            info = detect_distro(UBUNTU_RELEASE, "5.15.0-73-generic")
+            with unittest.mock.patch("builtins.open", unittest.mock.mock_open(read_data=UBUNTU_RELEASE)):
+                info = detect_distro(uname_r="5.15.0-73-generic")
         assert info.package_kernel_version == "5.15.0-73.82"
 
     def test_package_version_none_when_unavailable(self):
         with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
             info = detect_distro(UBUNTU_RELEASE, "5.15.0-73-generic")
         assert info.package_kernel_version is None
+
+    def test_ssh_mode_skips_local_lookup(self):
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version") as mock_pkg:
+            detect_distro(UBUNTU_RELEASE, "5.15.0-73-generic")
+        mock_pkg.assert_not_called()
