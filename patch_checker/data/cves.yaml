@@ -1,0 +1,113 @@
+cves:
+  - cve_id: CVE-2026-31431
+    nickname: CopyFail
+    cvss: 7.8
+    reserved: false
+    # Affected: 4.14-5.10.253, 5.11-5.15.203, 5.16-6.1.169, 6.2-6.6.136, 6.7-6.12.84, 6.13-6.18.21, 6.19-6.19.11
+    affected_ranges:
+      - {min_version: "4.14.0", max_version_exclusive: "5.10.254"}
+      - {min_version: "5.11.0", max_version_exclusive: "5.15.204"}
+      - {min_version: "5.16.0", max_version_exclusive: "6.1.170"}
+      - {min_version: "6.2.0",  max_version_exclusive: "6.6.137"}
+      - {min_version: "6.7.0",  max_version_exclusive: "6.12.85"}
+      - {min_version: "6.13.0", max_version_exclusive: "6.18.22"}
+      - {min_version: "6.19.0", max_version_exclusive: "6.19.12"}
+      - {min_version: "7.0.0",  max_version_exclusive: "7.0.1"}
+    fixed_versions: ["5.10.254", "5.15.204", "6.1.170", "6.6.137", "6.12.85", "6.18.22", "6.19.12"]
+    mitigation_type: module
+    modules: [algif_aead]
+    permanent_fix_commands:
+      ubuntu: "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)"
+      debian: "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)"
+      rhel: "sudo dnf update kernel && sudo reboot"
+      almalinux: "sudo dnf update kernel && sudo reboot"
+      rocky: "sudo dnf update kernel && sudo reboot"
+      fedora: "sudo dnf update kernel && sudo reboot"
+      centos: "sudo dnf update kernel && sudo reboot"
+      sles: "sudo zypper update kernel-default && sudo reboot"
+      opensuse: "sudo zypper update kernel-default && sudo reboot"
+      generic: "カーネルを最新の修正済みバージョンに更新してください"
+
+  - cve_id: CVE-2026-43284
+    nickname: DirtyFrag
+    cvss: 8.8
+    reserved: false
+    # Affected: 4.11-5.10.254, 5.12-5.15.204, 5.16-6.1.170, 6.2-6.6.137, 6.7-6.12.86, 6.13-6.18.27, 7.0-7.0.4
+    affected_ranges:
+      - {min_version: "4.11.0", max_version_exclusive: "5.10.255"}
+      - {min_version: "5.12.0", max_version_exclusive: "5.15.205"}
+      - {min_version: "5.16.0", max_version_exclusive: "6.1.171"}
+      - {min_version: "6.2.0",  max_version_exclusive: "6.6.138"}
+      - {min_version: "6.7.0",  max_version_exclusive: "6.12.87"}
+      - {min_version: "6.13.0", max_version_exclusive: "6.18.28"}
+      - {min_version: "7.0.0",  max_version_exclusive: "7.0.5"}
+    fixed_versions: ["5.10.255", "5.15.205", "6.1.171", "6.6.138", "6.12.87", "6.18.28", "7.0.5"]
+    mitigation_type: module
+    modules: [esp4, esp6]
+    permanent_fix_commands:
+      ubuntu: "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)"
+      debian: "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)"
+      rhel: "sudo dnf update kernel && sudo reboot"
+      almalinux: "sudo dnf update kernel && sudo reboot"
+      rocky: "sudo dnf update kernel && sudo reboot"
+      fedora: "sudo dnf update kernel && sudo reboot"
+      centos: "sudo dnf update kernel && sudo reboot"
+      sles: "sudo zypper update kernel-default && sudo reboot"
+      opensuse: "sudo zypper update kernel-default && sudo reboot"
+      generic: "カーネルを最新の修正済みバージョンに更新してください"
+
+  - cve_id: CVE-2026-43500
+    nickname: DirtyFrag
+    cvss: 7.8
+    reserved: false
+    # Affected: 5.3-6.18.28, 6.19-7.0.5
+    affected_ranges:
+      - {min_version: "5.3.0",  max_version_exclusive: "6.18.29"}
+      - {min_version: "6.19.0", max_version_exclusive: "7.0.6"}
+    fixed_versions: ["6.18.29", "7.0.6"]
+    mitigation_type: module
+    modules: [rxrpc]
+    permanent_fix_commands:
+      ubuntu: "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)"
+      debian: "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)"
+      rhel: "sudo dnf update kernel && sudo reboot"
+      almalinux: "sudo dnf update kernel && sudo reboot"
+      rocky: "sudo dnf update kernel && sudo reboot"
+      fedora: "sudo dnf update kernel && sudo reboot"
+      centos: "sudo dnf update kernel && sudo reboot"
+      sles: "sudo zypper update kernel-default && sudo reboot"
+      opensuse: "sudo zypper update kernel-default && sudo reboot"
+      generic: "カーネルを最新の修正済みバージョンに更新してください"
+
+  - cve_id: CVE-2026-46300
+    nickname: Fragnesia
+    cvss: null
+    reserved: true
+    affected_ranges: []
+    fixed_versions: []
+    mitigation_type: module
+    modules: [esp4, esp6, rxrpc]
+    permanent_fix_commands:
+      generic: "CVE詳細が公開され次第、ベンダーアドバイザリを参照してカーネルを更新してください"
+
+  - cve_id: CVE-2026-46333
+    nickname: ssh-keysign-pwn
+    cvss: null
+    reserved: false
+    affected_ranges:
+      - {min_version: "4.0.0", max_version_exclusive: "999.0.0"}
+    fixed_versions: []
+    mitigation_type: sysctl
+    sysctl_key: kernel.yama.ptrace_scope
+    sysctl_value: 3
+    permanent_fix_commands:
+      ubuntu: "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)"
+      debian: "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)"
+      rhel: "sudo dnf update kernel && sudo reboot"
+      almalinux: "sudo dnf update kernel && sudo reboot"
+      rocky: "sudo dnf update kernel && sudo reboot"
+      fedora: "sudo dnf update kernel && sudo reboot"
+      centos: "sudo dnf update kernel && sudo reboot"
+      sles: "sudo zypper update kernel-default && sudo reboot"
+      opensuse: "sudo zypper update kernel-default && sudo reboot"
+      generic: "カーネルを最新の修正済みバージョンに更新してください"
