@@ -15,7 +15,7 @@
         {"min_version": "6.19.0", "max_version_exclusive": "6.19.12"},
         {"min_version": "7.0.0",  "max_version_exclusive": "7.0.1"}
       ],
-      "fixed_versions": ["5.10.254", "5.15.204", "6.1.170", "6.6.137", "6.12.85", "6.18.22", "6.19.12"],
+      "fixed_versions": ["5.10.254", "5.15.204", "6.1.170", "6.6.137", "6.12.85", "6.18.22", "6.19.12", "7.0.1"],
       "mitigation_type": "module",
       "modules": ["algif_aead"],
       "permanent_fix_commands": {
