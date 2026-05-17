@@ -26,6 +26,17 @@ jobs:
       - name: Checksums
         run: make checksums
 
+      - name: Commit checksums to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout main
+          cp dist/SHA256SUMS CHECKSUMS
+          git add CHECKSUMS
+          git commit -m "chore: update CHECKSUMS for ${{ github.ref_name }}" || echo "no changes"
+          git push origin main
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
@@ -33,4 +44,3 @@ jobs:
           files: |
             dist/patch-checker-check.pyz
             dist/patch-checker-scan.pyz
-            dist/SHA256SUMS
