@@ -17,15 +17,16 @@ class TestVersion:
         assert exc_info.value.code == 0
 
     def test_version_output_contains_version(self, capsys):
-        """--version の出力に 0.2.0 が含まれる"""
+        """--version の出力に __version__ が含まれる"""
         from patch_checker.cli import main
+        from patch_checker import __version__
 
         with pytest.raises(SystemExit):
             with patch("sys.argv", ["patch-checker", "--version"]):
                 main()
 
         captured = capsys.readouterr()
-        assert "0.2.0" in captured.out
+        assert __version__ in captured.out
 
 
 class TestCmdScanImportError:
