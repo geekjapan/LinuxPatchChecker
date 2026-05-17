@@ -42,5 +42,5 @@ jobs:
         with:
           body_path: dist/SHA256SUMS
           files: |
-            dist/patch-checker-check.pyz
-            dist/patch-checker-scan.pyz
+            dist/patch-checker.pyz
+            dist/patch-checker-ssh.pyz

@@ -24,36 +24,36 @@ Ubuntu, Debian, RHEL, AlmaLinux, Rocky Linux, Fedora, CentOS Stream, SLES, openS
 
 ```bash
 # 検知・暫定対策適用用（target host で実行）
-curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
+curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker.pyz
 
 # SSH一括スキャン用（管理ホストで実行）
-curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-scan.pyz
+curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-ssh.pyz
 ```
 
 ### 検知
 
 ```bash
-python3 patch-checker-check.pyz check
-python3 patch-checker-check.pyz check --json
-python3 patch-checker-check.pyz check --cve CVE-2026-31431
+python3 patch-checker.pyz check
+python3 patch-checker.pyz check --json
+python3 patch-checker.pyz check --cve CVE-2026-31431
 ```
 
 ### 暫定対策の適用
 
 ```bash
-sudo python3 patch-checker-check.pyz check --apply
-sudo python3 patch-checker-check.pyz check --apply --force   # 使用中モジュールも強制適用
+sudo python3 patch-checker.pyz check --apply
+sudo python3 patch-checker.pyz check --apply --force   # 使用中モジュールも強制適用
 ```
 
 ### SSH経由での複数ホスト一括スキャン
 
-管理ホスト上で `patch-checker-scan.pyz` を使用します（[ファイル種別](#ファイル種別の使い分け)参照）。
+管理ホスト上で `patch-checker-ssh.pyz` を使用します（[ファイル種別](#ファイル種別の使い分け)参照）。
 
 ```bash
-python3 patch-checker-scan.pyz scan host1 host2 host3
-python3 patch-checker-scan.pyz scan --hosts hosts.txt
-python3 patch-checker-scan.pyz scan --hosts hosts.txt --user admin --key ~/.ssh/id_rsa
-python3 patch-checker-scan.pyz scan --hosts hosts.txt --json
+python3 patch-checker-ssh.pyz scan host1 host2 host3
+python3 patch-checker-ssh.pyz scan --hosts hosts.txt
+python3 patch-checker-ssh.pyz scan --hosts hosts.txt --user admin --key ~/.ssh/id_rsa
+python3 patch-checker-ssh.pyz scan --hosts hosts.txt --json
 ```
 
 ---
@@ -65,7 +65,7 @@ python3 patch-checker-scan.pyz scan --hosts hosts.txt --json
 ハッシュはリポジトリの [`CHECKSUMS`](https://github.com/geekjapan/LinuxPatchChecker/blob/main/CHECKSUMS) で管理されています。
 
 ```bash
-sha256sum patch-checker-check.pyz
+sha256sum patch-checker.pyz
 ```
 
 出力を `CHECKSUMS` ファイルの該当行と照合してください。

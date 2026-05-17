@@ -7,6 +7,6 @@ mkdir -p "$REPO_ROOT/dist"
 cd "$REPO_ROOT"
 shiv \
     -e 'patch_checker.cli:main' \
-    -o "$REPO_ROOT/dist/patch-checker-scan.pyz" \
+    -o "$REPO_ROOT/dist/patch-checker-ssh.pyz" \
     --reproducible \
     ".[scan]"

@@ -31,8 +31,8 @@ pytest                    # 全テスト実行
 pytest tests/test_detector.py   # 単一テストファイルの実行
 pytest -k "TestGrep"      # 特定のテストクラス/関数のみ実行
 patch-checker --help      # CLIヘルプ
-make build-check          # dist/patch-checker-check.pyz をビルド（stdlibのみ）
-pip install shiv && make build-scan  # dist/patch-checker-scan.pyz をビルド（paramiko同梱）
+make build-check          # dist/patch-checker.pyz をビルド（stdlibのみ）
+pip install shiv && make build-scan  # dist/patch-checker-ssh.pyz をビルド（paramiko同梱）
 make build                # 両方ビルド
 make checksums            # dist/SHA256SUMS を生成
 ```

@@ -18,5 +18,5 @@ find "$PKGROOT" -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 python3 -m zipapp \
     "$PKGROOT" \
     -p '/usr/bin/env python3' \
-    -o "$REPO_ROOT/dist/patch-checker-check.pyz" \
+    -o "$REPO_ROOT/dist/patch-checker.pyz" \
     -m 'patch_checker.cli:main'
