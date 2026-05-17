@@ -9,4 +9,4 @@ shiv \
     -e 'patch_checker.cli:main' \
     -o "$REPO_ROOT/dist/patch-checker-scan.pyz" \
     --reproducible \
-    .
+    ".[scan]"
