@@ -76,5 +76,5 @@ class TestCmdScanImportError:
                 cmd_scan(args)
 
         captured = capsys.readouterr()
-        assert "patch-checker-scan.pyz" in captured.err
+        assert "patch-checker-ssh.pyz" in captured.err
         assert "pip install" in captured.err
