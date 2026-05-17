@@ -60,16 +60,6 @@ python3 patch-checker-scan.pyz scan --hosts hosts.txt --json
 
 ## 補足
 
-### ファイル種別の使い分け
-
-| | patch-checker-check.pyz | patch-checker-scan.pyz |
-|---|---|---|
-| 用途 | target host 上で実行（検知・暫定対策適用） | 管理ホスト上で実行（SSH一括スキャン） |
-| Python 依存 | stdlib のみ（Python 3.8+） | stdlib + paramiko 同梱 |
-| サイズ | 小（~80KB） | 大（paramiko 同梱） |
-| check サブコマンド | ✅ | ✅ |
-| scan サブコマンド | ❌（エラーメッセージを表示） | ✅ |
-
 ### SHA256 検証
 
 ハッシュはリポジトリの [`CHECKSUMS`](https://github.com/geekjapan/LinuxPatchChecker/blob/main/CHECKSUMS) で管理されています。
