@@ -133,6 +133,8 @@ def scan_host(host: str, options: dict) -> dict:
         "host": host,
         "kernel": uname_r,
         "distro": distro_info.distro,
+        "is_els": distro_info.is_els,
+        "package_kernel_version": distro_info.package_kernel_version,
         "status": "ok",
         "_results": results,
         "results": [
@@ -144,6 +146,7 @@ def scan_host(host: str, options: dict) -> dict:
                 "recommended_action": r.recommended_action,
                 "detection_method": r.detection_method,
                 "notes": r.notes,
+                "detection_confidence": r.detection_confidence,
             }
             for r in results
         ],
