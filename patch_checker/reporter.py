@@ -4,14 +4,29 @@ from typing import List, Optional
 from .detector import CVEResult, FIXED, VULNERABLE, NOT_MITIGATED, MANUAL_CHECK_REQUIRED
 
 
+def _environment_warning(changelog_type: str, is_els: bool) -> Optional[str]:
+    if is_els:
+        return "警告: ELSモード検知。バックポートの可能性があるため、ベンダーアドバイザリの手動確認を推奨します。"
+    if changelog_type == "none":
+        return "警告: changelogが利用不可の環境です。ベンダーアドバイザリの手動確認を推奨します。"
+    return None
+
+
 def format_text(
     host: str,
     kernel: str,
     distro: str,
     results: List[CVEResult],
     apply_results: Optional[list] = None,
+    changelog_type: str = "",
+    is_els: bool = False,
 ) -> str:
-    lines = [
+    warning = _environment_warning(changelog_type, is_els)
+    lines = []
+    if warning:
+        lines.append(warning)
+        lines.append("")
+    lines += [
         f"Host:   {host}",
         f"Kernel: {kernel}",
         f"Distro: {distro}",
@@ -28,7 +43,8 @@ def format_text(
             MANUAL_CHECK_REQUIRED: "??  MANUAL_CHECK_REQUIRED",
         }
         perm = perm_map.get(r.permanent_fix_status, r.permanent_fix_status)
-        lines.append(f"{r.cve_id:<20} {r.nickname:<22} {mit:<16} {perm}")
+        confidence_label = f"[信頼性: {r.detection_confidence}]"
+        lines.append(f"{r.cve_id:<20} {r.nickname:<22} {mit:<16} {perm}  {confidence_label}")
         lines.append(f"  推奨: {r.recommended_action}")
         if r.notes:
             lines.append(f"  注記: {r.notes}")
@@ -49,11 +65,15 @@ def format_json(
     distro: str,
     results: List[CVEResult],
     apply_results: Optional[list] = None,
+    is_els: bool = False,
+    package_kernel_version: Optional[str] = None,
 ) -> str:
     data: dict = {
         "host": host,
         "kernel": kernel,
         "distro": distro,
+        "is_els": is_els,
+        "package_kernel_version": package_kernel_version,
         "results": [
             {
                 "cve_id": r.cve_id,
@@ -63,6 +83,7 @@ def format_json(
                 "recommended_action": r.recommended_action,
                 "detection_method": r.detection_method,
                 "notes": r.notes,
+                "detection_confidence": r.detection_confidence,
             }
             for r in results
         ],

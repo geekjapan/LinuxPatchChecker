@@ -2,7 +2,7 @@ import gzip
 import re
 import subprocess
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 
 from .cve_db import CVEEntry
 from .distro import DistroInfo, KernelVersion
@@ -27,7 +27,7 @@ class CVEResult:
     recommended_action: str
     detection_method: str
     notes: str = ""
-    detection_confidence: str = HIGH
+    detection_confidence: Literal["HIGH", "MEDIUM", "LOW"] = HIGH
 
 
 def grep_changelog(
