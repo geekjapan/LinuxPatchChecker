@@ -21,7 +21,7 @@ ELS_DISTRO_PREFIXES: frozenset = frozenset({
 def is_els_distro(distro_id: str, version_id: str) -> bool:
     if (distro_id, version_id) in ELS_DISTROS:
         return True
-    return any(distro_id == d and version_id.startswith(v) for d, v in ELS_DISTRO_PREFIXES)
+    return any(distro_id == d and (version_id == v or version_id.startswith(v + ".")) for d, v in ELS_DISTRO_PREFIXES)
 
 
 @dataclass(order=True)

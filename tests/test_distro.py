@@ -49,6 +49,11 @@ class TestKernelVersion:
 
 
 class TestDetectDistro:
+    @pytest.fixture(autouse=True)
+    def mock_pkg_version(self):
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
+            yield
+
     def test_ubuntu(self):
         info = detect_distro(UBUNTU_RELEASE, "6.8.0-40-generic")
         assert info.distro == "ubuntu"
@@ -129,23 +134,28 @@ class TestChangelogSource:
 
 class TestELSDetection:
     def test_rhel7_is_els(self):
-        info = detect_distro(RHEL7_RELEASE, "3.10.0-1160.el7.x86_64")
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
+            info = detect_distro(RHEL7_RELEASE, "3.10.0-1160.el7.x86_64")
         assert info.is_els is True
 
     def test_sles12_is_els(self):
-        info = detect_distro(SLES12_RELEASE, "4.12.14-122.201-default")
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
+            info = detect_distro(SLES12_RELEASE, "4.12.14-122.201-default")
         assert info.is_els is True
 
     def test_ubuntu16_is_els(self):
-        info = detect_distro(UBUNTU16_RELEASE, "4.15.0-213-generic")
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
+            info = detect_distro(UBUNTU16_RELEASE, "4.15.0-213-generic")
         assert info.is_els is True
 
     def test_ubuntu24_not_els(self):
-        info = detect_distro(UBUNTU_RELEASE, "6.8.0-40-generic")
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
+            info = detect_distro(UBUNTU_RELEASE, "6.8.0-40-generic")
         assert info.is_els is False
 
     def test_rhel9_not_els(self):
-        info = detect_distro(RHEL_RELEASE, "5.14.0-427.13.1.el9_4.x86_64")
+        with unittest.mock.patch("patch_checker.distro.get_package_kernel_version", return_value=None):
+            info = detect_distro(RHEL_RELEASE, "5.14.0-427.13.1.el9_4.x86_64")
         assert info.is_els is False
 
 
