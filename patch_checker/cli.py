@@ -47,9 +47,19 @@ def cmd_check(args) -> None:
         results = detect_all(cves, distro_info)
 
     if args.json:
-        print(format_json(distro_info.hostname, distro_info.kernel_version_str, distro_info.distro, results, apply_results))
+        print(format_json(
+            distro_info.hostname, distro_info.kernel_version_str, distro_info.distro,
+            results, apply_results,
+            is_els=distro_info.is_els,
+            package_kernel_version=distro_info.package_kernel_version,
+        ))
     else:
-        print(format_text(distro_info.hostname, distro_info.kernel_version_str, distro_info.distro, results, apply_results))
+        print(format_text(
+            distro_info.hostname, distro_info.kernel_version_str, distro_info.distro,
+            results, apply_results,
+            changelog_type=distro_info.changelog_source.get("type", ""),
+            is_els=distro_info.is_els,
+        ))
 
     raise SystemExit(exit_code(results))
 
