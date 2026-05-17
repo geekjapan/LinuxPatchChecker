@@ -31,6 +31,10 @@ pytest                    # 全テスト実行
 pytest tests/test_detector.py   # 単一テストファイルの実行
 pytest -k "TestGrep"      # 特定のテストクラス/関数のみ実行
 patch-checker --help      # CLIヘルプ
+make build-check          # dist/patch-checker-check.pyz をビルド（stdlibのみ）
+pip install shiv && make build-scan  # dist/patch-checker-scan.pyz をビルド（paramiko同梱）
+make build                # 両方ビルド
+make checksums            # dist/SHA256SUMS を生成
 ```
 
 ## Architecture
@@ -38,18 +42,19 @@ patch-checker --help      # CLIヘルプ
 ```
 patch_checker/
   cli.py          # argparseサブコマンド（check/scan）、エントリポイント
-  cve_db.py       # CVEEntry dataclass、cves.yamlのロード
+  cve_db.py       # CVEEntry dataclass、cves.jsonのロード
   distro.py       # DistroInfo/KernelVersion、ディストリ判定・changelog解決
   detector.py     # CVEResult、grep_changelog/detect_permanent_fix/detect_all
   remediation.py  # disable_module/set_sysctl/apply_mitigation、権限チェック
   reporter.py     # format_text/format_json/exit_code
   ssh.py          # SSHScanner（paramiko）、scan_host/scan_hosts
   data/
-    cves.yaml     # CVEメタデータ（影響バージョン範囲・暫定対策・恒久対策コマンド）
+    cves.json     # CVEメタデータ（影響バージョン範囲・暫定対策・恒久対策コマンド）
+    cves.schema.md  # cves.json の全フィールド定義
 ```
 
 **検知フロー**: `detect_all()` が各CVEに対してモジュール状態（lsmod）とchangelogグレップ（Ubuntu: gz、RHEL: rpm -q --changelog）を組み合わせて判定する。changelogが存在しない場合は `uname -r` バージョン比較にフォールバック。
 
 **SSH scanモード**: `ssh.py` がリモートホストで個別コマンド（uname/lsmod/sysctl/changelog grep）を実行し、結果をローカルで `detect_all()` に渡す。Python不要。
 
-**CVEデータの更新**: `patch_checker/data/cves.yaml` のみ編集すればよい（コード変更不要）。
+**CVEデータの更新**: `patch_checker/data/cves.json` のみ編集すればよい（コード変更不要）。フィールド定義は `patch_checker/data/cves.schema.md` 参照。
