@@ -114,11 +114,7 @@ curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download
 ハッシュはリポジトリの [`CHECKSUMS`](https://github.com/geekjapan/LinuxPatchChecker/blob/main/CHECKSUMS) で管理されています。
 
 ```bash
-# Linux
 sha256sum patch-checker-check.pyz
-
-# macOS
-shasum -a 256 patch-checker-check.pyz
 ```
 
 出力を `CHECKSUMS` ファイルの該当行と照合してください。
