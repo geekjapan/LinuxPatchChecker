@@ -1,3 +1,12 @@
+# CVEメタデータ
+#
+# version_comparison_reliable_for: uname -r のバージョン比較が信頼できるディストリのリスト
+#   - 信頼可能: generic, fedora, debian, opensuse-tumbleweed
+#     (mainline寄りのバージョン表記のため、NVDの影響範囲と直接比較可能)
+#   - 除外: ubuntu, rhel, almalinux, rocky, centos, sles, opensuse-leap
+#     (uname -r がパッケージバージョンと乖離するため、バージョン比較の精度が低い)
+#   - reserved CVE や影響範囲が広すぎるCVEは空リスト [] にする
+#
 cves:
   - cve_id: CVE-2026-31431
     nickname: CopyFail
