@@ -5,7 +5,7 @@ from . import __version__
 from .cve_db import load_cves
 from .detector import detect_all
 from .distro import detect_distro
-from .remediation import apply_mitigation, check_root
+from .remediation import apply_mitigation, check_root, cleanup_mitigations
 from .reporter import exit_code, format_json, format_scan_json, format_text
 
 
@@ -33,7 +33,7 @@ def cmd_check(args) -> None:
     if args.cve:
         cves = _filter_cves(cves, args.cve)
 
-    if args.apply:
+    if args.apply or args.cleanup:
         check_root()
 
     distro_info = detect_distro()
@@ -46,17 +46,21 @@ def cmd_check(args) -> None:
             apply_results.extend(apply_mitigation(cve, force=args.force))
         results = detect_all(cves, distro_info)
 
+    cleanup_results = None
+    if args.cleanup:
+        cleanup_results = cleanup_mitigations(results)
+
     if args.json:
         print(format_json(
             distro_info.hostname, distro_info.kernel_version_str, distro_info.distro,
-            results, apply_results,
+            results, apply_results, cleanup_results,
             is_els=distro_info.is_els,
             package_kernel_version=distro_info.package_kernel_version,
         ))
     else:
         print(format_text(
             distro_info.hostname, distro_info.kernel_version_str, distro_info.distro,
-            results, apply_results,
+            results, apply_results, cleanup_results,
             changelog_type=distro_info.changelog_source.get("type", ""),
             is_els=distro_info.is_els,
         ))
@@ -82,6 +86,7 @@ def cmd_scan(args) -> None:
 
     options = {
         "apply": args.apply,
+        "cleanup": args.cleanup,
         "force": args.force,
         "user": getattr(args, "user", None),
         "key": getattr(args, "key", None),
@@ -105,6 +110,7 @@ def cmd_scan(args) -> None:
                     sr.get("distro", "unknown"),
                     sr.get("_results", []),
                     sr.get("apply_results"),
+                    sr.get("cleanup_results"),
                 ))
 
     all_results = [r for sr in scan_results for r in sr.get("_results", [])]
@@ -123,6 +129,7 @@ def main() -> None:
     # check
     cp = sub.add_parser("check", help="ローカルホストをスキャン")
     cp.add_argument("--apply", action="store_true", help="暫定対策を適用する（要root/sudo）")
+    cp.add_argument("--cleanup", action="store_true", help="恒久対策済みCVEの暫定対策ファイルを削除する（要root/sudo）")
     cp.add_argument("--force", action="store_true", help="使用中モジュールを強制アンロード")
     cp.add_argument("--json", action="store_true", help="JSON形式で出力")
     cp.add_argument("--cve", metavar="CVE-ID", help="特定CVEのみチェック")
@@ -132,6 +139,7 @@ def main() -> None:
     sp.add_argument("hosts_args", nargs="*", metavar="HOST", help="スキャン対象ホスト")
     sp.add_argument("--hosts", metavar="FILE", help="ホストリストファイル（1行1ホスト）")
     sp.add_argument("--apply", action="store_true", help="暫定対策を適用する（リモートでrootが必要）")
+    sp.add_argument("--cleanup", action="store_true", help="恒久対策済みCVEの暫定対策ファイルを削除する（リモートでrootが必要）")
     sp.add_argument("--force", action="store_true", help="使用中モジュールを強制アンロード")
     sp.add_argument("--json", action="store_true", help="JSON形式で出力")
     sp.add_argument("--cve", metavar="CVE-ID", help="特定CVEのみチェック")

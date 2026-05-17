@@ -6,4 +6,4 @@ dist/
 venv/
 *.pyz
 .shiv/
-.vagrant/
+*.log

@@ -27,6 +27,15 @@ def _collect(client: "paramiko.SSHClient", cves: dict, uname_r: str) -> dict:
         client,
         "sysctl kernel.yama.ptrace_scope 2>/dev/null || echo 'kernel.yama.ptrace_scope = 0'",
     )
+    seen_modules: set = set()
+    for cve in cves.values():
+        for module in getattr(cve, "modules", []):
+            if module not in seen_modules:
+                seen_modules.add(module)
+                out[f"modprobe_{module}"] = _run(
+                    client,
+                    f"grep -rl 'blacklist {module}' /etc/modprobe.d/ 2>/dev/null || true",
+                )
     for cve_id in cves:
         cmd = (
             f"("
@@ -39,12 +48,44 @@ def _collect(client: "paramiko.SSHClient", cves: dict, uname_r: str) -> dict:
     return out
 
 
-def _apply_remote(client: "paramiko.SSHClient", cves: dict) -> list:
+def _apply_remote(client: "paramiko.SSHClient", cves: dict, force: bool = False) -> list:
     """Apply mitigations on remote host by running modprobe/sysctl over SSH."""
     results = []
     for cve in cves.values():
         if cve.mitigation_type == "module":
             for module in cve.modules:
+                refcnt_raw = _run(
+                    client,
+                    f"cat /sys/module/{module}/refcnt 2>/dev/null || echo -1",
+                ).strip()
+                try:
+                    refcnt = int(refcnt_raw)
+                except ValueError:
+                    refcnt = -1
+
+                if refcnt == -1:
+                    # module not loaded — just write blacklist
+                    _run(
+                        client,
+                        f"mkdir -p /etc/modprobe.d && echo 'blacklist {module}' >> /etc/modprobe.d/patch-checker-{cve.cve_id.lower()}.conf",
+                    )
+                    results.append({
+                        "cve_id": cve.cve_id,
+                        "module": module,
+                        "success": True,
+                        "message": f"{module}: 未ロード。blacklistを追加しました。",
+                    })
+                    continue
+
+                if refcnt > 0 and not force:
+                    results.append({
+                        "cve_id": cve.cve_id,
+                        "module": module,
+                        "success": False,
+                        "message": f"{module}: 使用中 (refcnt={refcnt})。スキップしました。--force で強制適用できます。",
+                    })
+                    continue
+
                 r = _run(
                     client,
                     f"modprobe -r {module} 2>&1 && echo 'OK' || echo 'FAIL'",
@@ -53,7 +94,7 @@ def _apply_remote(client: "paramiko.SSHClient", cves: dict) -> list:
                 if success:
                     _run(
                         client,
-                        f"echo 'blacklist {module}' >> /etc/modprobe.d/patch-checker-{cve.cve_id.lower()}.conf",
+                        f"mkdir -p /etc/modprobe.d && echo 'blacklist {module}' >> /etc/modprobe.d/patch-checker-{cve.cve_id.lower()}.conf",
                     )
                 results.append({
                     "cve_id": cve.cve_id,
@@ -69,12 +110,36 @@ def _apply_remote(client: "paramiko.SSHClient", cves: dict) -> list:
                 f"echo 'OK' || echo 'FAIL'",
             )
             success = r.strip().endswith("OK")
+            warning = " 注意: この変更は再起動するまで元に戻せません。" if (success and cve.sysctl_irreversible) else ""
             results.append({
                 "cve_id": cve.cve_id,
                 "success": success,
-                "message": f"{cve.sysctl_key}={cve.sysctl_value}: {'設定しました。' if success else '設定失敗。rootでの実行を確認してください。'}",
+                "message": f"{cve.sysctl_key}={cve.sysctl_value}: {'設定しました。' if success else '設定失敗。rootでの実行を確認してください。'}{warning}",
             })
     return results
+
+
+def _cleanup_remote(client: "paramiko.SSHClient", results: list) -> list:
+    """Remove patch-checker blacklist files for permanently fixed CVEs on remote host."""
+    from .detector import FIXED
+    cleanup = []
+    for r in results:
+        if r.permanent_fix_status != FIXED:
+            continue
+        conf = f"/etc/modprobe.d/patch-checker-{r.cve_id.lower()}.conf"
+        exists = _run(client, f"test -f {conf} && echo yes || echo no").strip()
+        if exists != "yes":
+            continue
+        content = _run(client, f"cat {conf}").strip()
+        out = _run(client, f"rm -f {conf} && echo OK || echo FAIL").strip()
+        success = out == "OK"
+        cleanup.append({
+            "cve_id": r.cve_id,
+            "file": conf,
+            "success": success,
+            "message": f"{'削除しました' if success else '削除失敗'}: {conf}\n    内容: {content}",
+        })
+    return cleanup
 
 
 def scan_host(host: str, options: dict) -> dict:
@@ -122,10 +187,18 @@ def scan_host(host: str, options: dict) -> dict:
         if options.get("apply"):
             whoami = _run(client, "id -u").strip()
             if whoami == "0":
-                apply_results = _apply_remote(client, cves)
+                apply_results = _apply_remote(client, cves, force=options.get("force", False))
                 results = detect_all(cves, distro_info, remote_outputs=_collect(client, cves, uname_r))
             else:
                 apply_results = [{"success": False, "message": "リモートホストでrootでないため適用をスキップしました。sudo で SSH してください。"}]
+
+        cleanup_results = None
+        if options.get("cleanup"):
+            whoami = whoami if options.get("apply") else _run(client, "id -u").strip()
+            if whoami == "0":
+                cleanup_results = _cleanup_remote(client, results)
+            else:
+                cleanup_results = [{"success": False, "message": "リモートホストでrootでないためクリーンアップをスキップしました。sudo で SSH してください。"}]
     finally:
         client.close()
 
@@ -151,6 +224,7 @@ def scan_host(host: str, options: dict) -> dict:
             for r in results
         ],
         **({"apply_results": apply_results} if apply_results is not None else {}),
+        **({"cleanup_results": cleanup_results} if cleanup_results is not None else {}),
     }
 
 

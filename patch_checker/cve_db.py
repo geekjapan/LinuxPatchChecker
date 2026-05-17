@@ -16,6 +16,7 @@ class CVEEntry:
     modules: List[str] = field(default_factory=list)
     sysctl_key: Optional[str] = None
     sysctl_value: Optional[int] = None
+    sysctl_irreversible: bool = False
     permanent_fix_commands: Dict[str, str] = field(default_factory=dict)
     version_comparison_reliable_for: List[str] = field(default_factory=list)
 
@@ -38,6 +39,7 @@ def load_cves() -> Dict[str, CVEEntry]:
             modules=entry.get("modules", []),
             sysctl_key=entry.get("sysctl_key"),
             sysctl_value=entry.get("sysctl_value"),
+            sysctl_irreversible=entry.get("sysctl_irreversible", False),
             permanent_fix_commands=entry.get("permanent_fix_commands", {}),
             version_comparison_reliable_for=entry.get("version_comparison_reliable_for", []),
         )

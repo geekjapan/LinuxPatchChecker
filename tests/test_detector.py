@@ -120,17 +120,25 @@ class TestDetectPermanentFix:
         assert confidence == MEDIUM
 
 
+MODPROBE_BLACKLISTED_ESP4 = "/etc/modprobe.d/patch-checker.conf\n"
+MODPROBE_NOT_BLACKLISTED = ""
+
+
 class TestModuleMitigation:
     def test_module_loaded(self):
         assert detect_module_mitigation("esp4", LSMOD_WITH_ESP4) == NOT_MITIGATED
 
-    def test_module_not_loaded(self):
-        assert detect_module_mitigation("esp4", LSMOD_WITHOUT_ESP4) == MITIGATED
+    def test_module_not_loaded_and_blacklisted(self):
+        assert detect_module_mitigation("esp4", LSMOD_WITHOUT_ESP4, MODPROBE_BLACKLISTED_ESP4) == MITIGATED
+
+    def test_module_not_loaded_but_not_blacklisted(self):
+        # unloaded by default is not a mitigation
+        assert detect_module_mitigation("esp4", LSMOD_WITHOUT_ESP4, MODPROBE_NOT_BLACKLISTED) == NOT_MITIGATED
 
     def test_module_partial_name_no_match(self):
         # "esp4" should not match "esp4_udp" or similar
         lsmod = "Module                  Size  Used by\nesp4_udp               16384  0\n"
-        assert detect_module_mitigation("esp4", lsmod) == MITIGATED
+        assert detect_module_mitigation("esp4", lsmod, MODPROBE_BLACKLISTED_ESP4) == MITIGATED
 
     def test_lsmod_subprocess(self):
         with patch("subprocess.check_output", return_value=LSMOD_WITH_ESP4):

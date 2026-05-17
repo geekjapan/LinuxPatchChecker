@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from .cve_db import CVEEntry
-from .detector import MITIGATED, detect_module_mitigation, detect_sysctl_mitigation
+from .detector import FIXED, MITIGATED, CVEResult, detect_module_mitigation, detect_sysctl_mitigation
 
 MODPROBE_D = Path("/etc/modprobe.d")
 SYSCTL_CONF = Path("/etc/sysctl.d/99-patch-checker.conf")
@@ -56,7 +56,7 @@ def disable_module(module_name: str, cve_id: str, force: bool = False) -> dict:
         return {"success": False, "message": f"{module_name}: アンロード失敗: {e.stderr.decode().strip()}"}
 
 
-def set_sysctl(key: str, value: int) -> dict:
+def set_sysctl(key: str, value: int, irreversible: bool = False) -> dict:
     if detect_sysctl_mitigation(key, value) == MITIGATED:
         return {"success": True, "message": f"{key}={value}: 既に設定済み。"}
 
@@ -72,7 +72,36 @@ def set_sysctl(key: str, value: int) -> dict:
         with open(SYSCTL_CONF, "a") as f:
             f.write(entry)
 
-    return {"success": True, "message": f"{key}={value}: 設定しました。"}
+    warning = " 注意: この変更は再起動するまで元に戻せません。" if irreversible else ""
+    return {"success": True, "message": f"{key}={value}: 設定しました。{warning}"}
+
+
+def cleanup_mitigations(cve_results: list) -> list:
+    """Remove patch-checker blacklist files for permanently fixed CVEs."""
+    results = []
+    for r in cve_results:
+        if r.permanent_fix_status != FIXED:
+            continue
+        conf = MODPROBE_D / f"patch-checker-{r.cve_id.lower()}.conf"
+        if not conf.exists():
+            continue
+        content = conf.read_text().strip()
+        try:
+            conf.unlink()
+            results.append({
+                "cve_id": r.cve_id,
+                "file": str(conf),
+                "success": True,
+                "message": f"削除しました: {conf}\n    内容: {content}",
+            })
+        except OSError as e:
+            results.append({
+                "cve_id": r.cve_id,
+                "file": str(conf),
+                "success": False,
+                "message": f"削除失敗: {conf}: {e}",
+            })
+    return results
 
 
 def apply_mitigation(cve: CVEEntry, force: bool = False) -> list:
@@ -84,7 +113,7 @@ def apply_mitigation(cve: CVEEntry, force: bool = False) -> list:
             r["module"] = module
             results.append(r)
     elif cve.mitigation_type == "sysctl":
-        r = set_sysctl(cve.sysctl_key, cve.sysctl_value)
+        r = set_sysctl(cve.sysctl_key, cve.sysctl_value, irreversible=cve.sysctl_irreversible)
         r["cve_id"] = cve.cve_id
         results.append(r)
     return results

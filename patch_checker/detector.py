@@ -121,6 +121,7 @@ def detect_permanent_fix(
 def detect_module_mitigation(
     module_name: str,
     lsmod_output: Optional[str] = None,
+    modprobe_output: Optional[str] = None,
 ) -> str:
     if lsmod_output is None:
         try:
@@ -132,7 +133,19 @@ def detect_module_mitigation(
         parts = line.split()
         if parts and parts[0] == module_name:
             return NOT_MITIGATED
-    return MITIGATED
+
+    # Not currently loaded — only MITIGATED if explicitly blacklisted
+    if modprobe_output is None:
+        try:
+            modprobe_output = subprocess.check_output(
+                ["grep", "-rl", f"blacklist {module_name}", "/etc/modprobe.d/"],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            modprobe_output = ""
+
+    return MITIGATED if modprobe_output.strip() else NOT_MITIGATED
 
 
 def detect_sysctl_mitigation(
@@ -183,7 +196,10 @@ def detect_all(
 
     for cve in cves.values():
         if cve.mitigation_type == "module":
-            statuses = [detect_module_mitigation(m, lsmod_out) for m in cve.modules]
+            statuses = []
+            for m in cve.modules:
+                modprobe_out = remote_outputs.get(f"modprobe_{m}") if remote_outputs else None
+                statuses.append(detect_module_mitigation(m, lsmod_out, modprobe_out))
             mit_status = MITIGATED if all(s == MITIGATED for s in statuses) else NOT_MITIGATED
         elif cve.mitigation_type == "sysctl":
             sysctl_out = remote_outputs.get(f"sysctl_{cve.sysctl_key}") if remote_outputs else None

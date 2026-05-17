@@ -18,6 +18,7 @@ def format_text(
     distro: str,
     results: List[CVEResult],
     apply_results: Optional[list] = None,
+    cleanup_results: Optional[list] = None,
     changelog_type: str = "",
     is_els: bool = False,
 ) -> str:
@@ -56,6 +57,16 @@ def format_text(
             sym = "OK" if ar.get("success") else "NG"
             lines.append(f"  [{sym}] {ar.get('message', '')}")
 
+    if cleanup_results is not None:
+        lines.append("")
+        lines.append("=== 暫定対策クリーンアップ結果 ===")
+        if cleanup_results:
+            for cr in cleanup_results:
+                sym = "OK" if cr.get("success") else "NG"
+                lines.append(f"  [{sym}] {cr.get('message', '')}")
+        else:
+            lines.append("  クリーンアップ対象なし（恒久対策済みCVEのファイルが見つかりません）")
+
     return "\n".join(lines)
 
 
@@ -65,6 +76,7 @@ def format_json(
     distro: str,
     results: List[CVEResult],
     apply_results: Optional[list] = None,
+    cleanup_results: Optional[list] = None,
     is_els: bool = False,
     package_kernel_version: Optional[str] = None,
 ) -> str:
@@ -90,6 +102,8 @@ def format_json(
     }
     if apply_results is not None:
         data["apply_results"] = apply_results
+    if cleanup_results is not None:
+        data["cleanup_results"] = cleanup_results
     return json.dumps(data, ensure_ascii=False, indent=2)
 
 

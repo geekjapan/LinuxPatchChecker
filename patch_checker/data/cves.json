@@ -216,6 +216,7 @@
       "modules": [],
       "sysctl_key": "kernel.yama.ptrace_scope",
       "sysctl_value": 3,
+      "sysctl_irreversible": true,
       "permanent_fix_commands": {
         "ubuntu": "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)",
         "debian": "sudo apt update && sudo apt install --only-upgrade linux-image-$(uname -r)",
