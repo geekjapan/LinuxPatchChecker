@@ -103,12 +103,12 @@ WSL2、汎用カーネル、ELS環境では出力の冒頭に警告メッセー�
 
 ```bash
 # wget
-wget https://github.com/<owner>/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
-wget https://github.com/<owner>/LinuxPatchChecker/releases/latest/download/SHA256SUMS
+wget https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
+wget https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/SHA256SUMS
 
 # curl
-curl -LO https://github.com/<owner>/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
-curl -LO https://github.com/<owner>/LinuxPatchChecker/releases/latest/download/SHA256SUMS
+curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
+curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/SHA256SUMS
 ```
 
 ### SHA256 検証
