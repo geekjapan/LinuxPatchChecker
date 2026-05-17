@@ -16,72 +16,45 @@
 
 Ubuntu, Debian, RHEL, AlmaLinux, Rocky Linux, Fedora, CentOS Stream, SLES, openSUSE, Ubuntu(WSL2), 汎用
 
-## 使用方法
+---
 
-### ローカルホストのスキャン（検知のみ）
+## 実行手順
+
+### ダウンロード
 
 ```bash
-patch-checker check
-patch-checker check --json
-patch-checker check --cve CVE-2026-31431
+curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
 ```
 
-### ローカルホストへの暫定対策適用
+### 検知
 
 ```bash
-sudo patch-checker check --apply
-sudo patch-checker check --apply --force   # 使用中モジュールも強制適用
+python3 patch-checker-check.pyz check
+python3 patch-checker-check.pyz check --json
+python3 patch-checker-check.pyz check --cve CVE-2026-31431
+```
+
+### 暫定対策の適用
+
+```bash
+sudo python3 patch-checker-check.pyz check --apply
+sudo python3 patch-checker-check.pyz check --apply --force   # 使用中モジュールも強制適用
 ```
 
 ### SSH経由での複数ホスト一括スキャン
 
+管理ホスト上で `patch-checker-scan.pyz` を使用します（[ファイル種別](#ファイル種別の使い分け)参照）。
+
 ```bash
-patch-checker scan host1 host2 host3
-patch-checker scan --hosts hosts.txt
-patch-checker scan --hosts hosts.txt --user admin --key ~/.ssh/id_rsa
-patch-checker scan --hosts hosts.txt --json
+python3 patch-checker-scan.pyz scan host1 host2 host3
+python3 patch-checker-scan.pyz scan --hosts hosts.txt
+python3 patch-checker-scan.pyz scan --hosts hosts.txt --user admin --key ~/.ssh/id_rsa
+python3 patch-checker-scan.pyz scan --hosts hosts.txt --json
 ```
 
-## 終了コード
+---
 
-| コード | 意味 |
-|---|---|
-| 0 | 全CVE対策済み |
-| 1 | 未対策CVEあり |
-| 2 | 実行エラー |
-
-## 検知信頼性
-
-各CVEの恒久対策判定には **信頼性スコア（HIGH/MEDIUM/LOW）** が付与されます。
-
-| 信頼性 | 条件 | 例 |
-|---|---|---|
-| HIGH | changelogにCVE IDが記載されている | Ubuntu/RHEL でchangelogヒット |
-| MEDIUM | changelog存在・CVE未記載 かつ バージョン比較が信頼可能なディストリ | Fedora, Debian, openSUSE Tumbleweed |
-| LOW | changelog不在 / ELSモード / バージョン比較が信頼できないディストリ | Ubuntu, RHEL, SLES（changelogミス時） |
-
-**LOW判定のFIXEDは `MANUAL_CHECK_REQUIRED` に格上げ**されます（false negativeを防ぐため）。
-
-### ディストリビューション別の信頼性
-
-| ディストリ | バージョン比較の信頼性 | 理由 |
-|---|---|---|
-| Ubuntu / RHEL / AlmaLinux / Rocky / SLES | 低 | `uname -r` がパッケージバージョンと乖離 |
-| Fedora / Debian / openSUSE Tumbleweed / 汎用 | 高 | mainline寄りのバージョン表記 |
-| RHEL 7 / SLES 12 / Ubuntu 16.04-18.04 (ELS) | ELS | バックポートの可能性あり→常にLOW |
-
-### 低信頼度環境での警告
-
-WSL2、汎用カーネル、ELS環境では出力の冒頭に警告メッセージが表示されます。
-
-## 恒久対策について
-
-恒久対策（カーネルアップグレード）はコマンド提示のみ行います。自動実行はしません。
-各ディストリビューションのアップグレードコマンドはスキャン結果に表示されます。
-
-## オフライン環境への配布
-
-インターネット未接続のターゲットホストには、単一ファイル（.pyz）を転送して実行できます。
+## 補足
 
 ### ファイル種別の使い分け
 
@@ -93,10 +66,10 @@ WSL2、汎用カーネル、ELS環境では出力の冒頭に警告メッセー�
 | check サブコマンド | ✅ | ✅ |
 | scan サブコマンド | ❌（エラーメッセージを表示） | ✅ |
 
-### ダウンロード
+`patch-checker-scan.pyz` のダウンロード:
 
 ```bash
-curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-check.pyz
+curl -LO https://github.com/geekjapan/LinuxPatchChecker/releases/latest/download/patch-checker-scan.pyz
 ```
 
 ### SHA256 検証
@@ -109,15 +82,42 @@ sha256sum patch-checker-check.pyz
 
 出力を `CHECKSUMS` ファイルの該当行と照合してください。
 
-### 実行
+### 終了コード
 
-```bash
-python3 patch-checker-check.pyz check
-python3 patch-checker-check.pyz check --json
-python3 patch-checker-check.pyz --version
-```
+| コード | 意味 |
+|---|---|
+| 0 | 全CVE対策済み |
+| 1 | 未対策CVEあり |
+| 2 | 実行エラー |
 
-## CVEデータの更新
+### 検知信頼性
+
+各CVEの恒久対策判定には **信頼性スコア（HIGH/MEDIUM/LOW）** が付与されます。
+
+| 信頼性 | 条件 | 例 |
+|---|---|---|
+| HIGH | changelogにCVE IDが記載されている | Ubuntu/RHEL でchangelogヒット |
+| MEDIUM | changelog存在・CVE未記載 かつ バージョン比較が信頼可能なディストリ | Fedora, Debian, openSUSE Tumbleweed |
+| LOW | changelog不在 / ELSモード / バージョン比較が信頼できないディストリ | Ubuntu, RHEL, SLES（changelogミス時） |
+
+**LOW判定のFIXEDは `MANUAL_CHECK_REQUIRED` に格上げ**されます（false negativeを防ぐため）。
+
+#### ディストリビューション別の信頼性
+
+| ディストリ | バージョン比較の信頼性 | 理由 |
+|---|---|---|
+| Ubuntu / RHEL / AlmaLinux / Rocky / SLES | 低 | `uname -r` がパッケージバージョンと乖離 |
+| Fedora / Debian / openSUSE Tumbleweed / 汎用 | 高 | mainline寄りのバージョン表記 |
+| RHEL 7 / SLES 12 / Ubuntu 16.04-18.04 (ELS) | ELS | バックポートの可能性あり→常にLOW |
+
+WSL2、汎用カーネル、ELS環境では出力の冒頭に警告メッセージが表示されます。
+
+### 恒久対策について
+
+恒久対策（カーネルアップグレード）はコマンド提示のみ行います。自動実行はしません。
+各ディストリビューションのアップグレードコマンドはスキャン結果に表示されます。
+
+### CVEデータの更新
 
 CVEメタデータは `patch_checker/data/cves.json` に集約されています。コードを変更せずにこのファイルを直接編集することで、影響バージョン範囲・暫定対策・恒久対策コマンドを追加・変更できます。
 
