@@ -5,6 +5,22 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+ELS_DISTROS: frozenset = frozenset({
+    ("rhel", "7"),
+    ("centos", "7"),
+    ("sles", "12"),
+    ("ubuntu", "16.04"),
+    ("ubuntu", "18.04"),
+})
+
+
+def is_els_distro(distro_id: str, version_id: str) -> bool:
+    # SLES: 12 means any 12.x SP
+    if distro_id == "sles" and version_id.startswith("12"):
+        return True
+    return (distro_id, version_id) in ELS_DISTROS
+
+
 @dataclass(order=True)
 class KernelVersion:
     major: int
@@ -29,6 +45,7 @@ class DistroInfo:
     kernel_version_str: str
     changelog_source: dict
     hostname: str
+    is_els: bool = False
 
 
 def detect_distro(
@@ -85,6 +102,9 @@ def detect_distro(
 
     changelog_source = get_changelog_source(distro, uname_r)
 
+    version_id = fields.get("VERSION_ID", "")
+    is_els = is_els_distro(distro_id, version_id)
+
     try:
         hostname = socket.gethostname()
     except Exception:
@@ -96,6 +116,7 @@ def detect_distro(
         kernel_version_str=uname_r,
         changelog_source=changelog_source,
         hostname=hostname,
+        is_els=is_els,
     )
 
 

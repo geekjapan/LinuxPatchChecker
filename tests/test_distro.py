@@ -1,6 +1,9 @@
 import pytest
-from patch_checker.distro import KernelVersion, detect_distro, get_changelog_source, get_kernel_version
+from patch_checker.distro import KernelVersion, detect_distro, get_changelog_source, get_kernel_version, is_els_distro
 
+RHEL7_RELEASE = 'ID="rhel"\nNAME="Red Hat Enterprise Linux Server"\nVERSION_ID="7"\n'
+SLES12_RELEASE = 'ID="sles"\nNAME="SLES"\nVERSION_ID="12.5"\n'
+UBUNTU16_RELEASE = 'ID=ubuntu\nNAME="Ubuntu"\nVERSION_ID="16.04"\n'
 UBUNTU_RELEASE = 'ID=ubuntu\nNAME="Ubuntu"\nVERSION_ID="24.04"\n'
 DEBIAN_RELEASE = 'ID=debian\nNAME="Debian GNU/Linux"\nVERSION_ID="12"\n'
 RHEL_RELEASE = 'ID="rhel"\nNAME="Red Hat Enterprise Linux"\nVERSION_ID="9"\n'
@@ -120,3 +123,48 @@ class TestChangelogSource:
     def test_wsl2(self):
         src = get_changelog_source("ubuntu-wsl2", "5.15.153.1-microsoft")
         assert src["type"] == "none"
+
+
+class TestELSDetection:
+    def test_rhel7_is_els(self):
+        info = detect_distro(RHEL7_RELEASE, "3.10.0-1160.el7.x86_64")
+        assert info.is_els is True
+
+    def test_sles12_is_els(self):
+        info = detect_distro(SLES12_RELEASE, "4.12.14-122.201-default")
+        assert info.is_els is True
+
+    def test_ubuntu16_is_els(self):
+        info = detect_distro(UBUNTU16_RELEASE, "4.15.0-213-generic")
+        assert info.is_els is True
+
+    def test_ubuntu24_not_els(self):
+        info = detect_distro(UBUNTU_RELEASE, "6.8.0-40-generic")
+        assert info.is_els is False
+
+    def test_rhel9_not_els(self):
+        info = detect_distro(RHEL_RELEASE, "5.14.0-427.13.1.el9_4.x86_64")
+        assert info.is_els is False
+
+
+class TestIsElsDistro:
+    def test_rhel7(self):
+        assert is_els_distro("rhel", "7") is True
+
+    def test_rhel9(self):
+        assert is_els_distro("rhel", "9") is False
+
+    def test_sles12_sp5(self):
+        assert is_els_distro("sles", "12.5") is True
+
+    def test_sles15(self):
+        assert is_els_distro("sles", "15") is False
+
+    def test_ubuntu1804(self):
+        assert is_els_distro("ubuntu", "18.04") is True
+
+    def test_ubuntu2404(self):
+        assert is_els_distro("ubuntu", "24.04") is False
+
+    def test_centos7(self):
+        assert is_els_distro("centos", "7") is True
