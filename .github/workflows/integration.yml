@@ -1,0 +1,66 @@
+name: Integration Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu-24.04
+            runs-on: ubuntu-24.04
+            container: ''
+          - name: ubuntu-22.04
+            runs-on: ubuntu-22.04
+            container: ''
+          - name: debian-12
+            runs-on: ubuntu-latest
+            container: debian:12
+          - name: almalinux-9
+            runs-on: ubuntu-latest
+            container: almalinux:9
+          - name: fedora-latest
+            runs-on: ubuntu-latest
+            container: fedora:latest
+
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runs-on }}
+    container: ${{ matrix.container }}
+
+    steps:
+      - name: Install git and python3
+        if: matrix.container != ''
+        run: |
+          if command -v apt-get >/dev/null 2>&1; then
+            apt-get update -q && apt-get install -y -q git python3
+          else
+            dnf install -y -q git python3
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Build patch-checker.pyz
+        run: bash scripts/build_check.sh
+
+      - name: check exits 0 or 1
+        run: |
+          python3 dist/patch-checker.pyz check; code=$?
+          [ $code -le 1 ]
+
+      - name: --json produces valid output
+        run: |
+          python3 dist/patch-checker.pyz check --json | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          assert 'results' in data, 'missing results key'
+          cves = {r['cve_id'] for r in data['results']}
+          assert 'CVE-2026-31431' in cves, f'CVE-2026-31431 not found in {cves}'
+          "
+
+      - name: --version works
+        run: python3 dist/patch-checker.pyz --version
