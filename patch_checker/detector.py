@@ -34,7 +34,8 @@ def grep_changelog(
     cve_id: str,
     changelog_source: dict,
     remote_outputs: Optional[dict] = None,
-) -> bool:
+) -> Optional[bool]:
+    """Return True=found, False=not found, None=changelog inaccessible."""
     if remote_outputs is not None:
         return bool(remote_outputs.get(f"changelog_{cve_id}", "").strip())
 
@@ -44,7 +45,7 @@ def grep_changelog(
             with gzip.open(changelog_source["path"], "rt", errors="replace") as f:
                 return cve_id in f.read()
         except (FileNotFoundError, OSError):
-            return False
+            return None
     if source_type == "rpm":
         try:
             out = subprocess.check_output(
@@ -54,7 +55,7 @@ def grep_changelog(
             )
             return cve_id in out
         except (subprocess.CalledProcessError, FileNotFoundError):
-            return False
+            return None
     return False
 
 
@@ -70,13 +71,13 @@ def _in_affected_range(kv: KernelVersion, affected_ranges: list) -> bool:
 def _compute_confidence(
     cve: CVEEntry,
     distro_info: DistroInfo,
-    changelog_hit: bool,
+    changelog_hit: Optional[bool],
 ) -> str:
-    if changelog_hit:
+    if changelog_hit is True:
         return HIGH
     if distro_info.is_els:
         return LOW
-    if distro_info.changelog_source["type"] == "none":
+    if changelog_hit is None:
         return LOW
     if distro_info.distro in cve.version_comparison_reliable_for:
         return MEDIUM
@@ -93,10 +94,10 @@ def detect_permanent_fix(
         return MANUAL_CHECK_REQUIRED, "reserved", "CVEはRESERVEDステータスのため手動確認が必要", LOW
 
     source = distro_info.changelog_source
-    changelog_hit = False
+    changelog_hit: Optional[bool] = False
     if source["type"] != "none":
         changelog_hit = grep_changelog(cve.cve_id, source, remote_outputs)
-        if changelog_hit:
+        if changelog_hit is True:
             return FIXED, "changelog_grep", "", HIGH
         method = "version_comparison"
         notes = ""

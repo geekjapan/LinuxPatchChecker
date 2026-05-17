@@ -47,7 +47,7 @@ class TestGrep:
 
     def test_gz_missing_file(self):
         src = {"type": "gz", "path": "/nonexistent/changelog.Debian.gz"}
-        assert grep_changelog("CVE-2026-31431", src) is False
+        assert grep_changelog("CVE-2026-31431", src) is None
 
     def test_rpm_hit(self):
         src = {"type": "rpm", "package": "kernel"}
@@ -58,6 +58,12 @@ class TestGrep:
         src = {"type": "rpm", "package": "kernel"}
         with patch("subprocess.check_output", return_value="* Other fix\n"):
             assert grep_changelog("CVE-2026-31431", src) is False
+
+    def test_rpm_access_error_returns_none(self):
+        import subprocess as _sp
+        src = {"type": "rpm", "package": "kernel"}
+        with patch("subprocess.check_output", side_effect=_sp.CalledProcessError(1, "rpm")):
+            assert grep_changelog("CVE-2026-31431", src) is None
 
     def test_none_type(self):
         assert grep_changelog("CVE-2026-31431", {"type": "none"}) is False
@@ -111,7 +117,7 @@ class TestDetectPermanentFix:
         status, method, notes, confidence = detect_permanent_fix(cves["CVE-2026-31431"], distro)
         assert method == "version_comparison_fallback"
         assert "changelog" in notes
-        assert confidence == LOW
+        assert confidence == MEDIUM
 
 
 class TestModuleMitigation:
@@ -156,12 +162,19 @@ class TestComputeConfidence:
         distro.is_els = True
         assert _compute_confidence(cves["CVE-2026-31431"], distro, changelog_hit=False) == LOW
 
-    def test_no_changelog_returns_low(self):
+    def test_no_changelog_returns_medium_for_trusted_distro(self):
         cves = load_cves()
         distro = _make_distro(distro="generic", changelog_type="none")
         distro.changelog_source = {"type": "none"}
         distro.is_els = False
-        assert _compute_confidence(cves["CVE-2026-31431"], distro, changelog_hit=False) == LOW
+        assert _compute_confidence(cves["CVE-2026-31431"], distro, changelog_hit=False) == MEDIUM
+
+    def test_inaccessible_changelog_returns_low_even_trusted(self):
+        cves = load_cves()
+        distro = _make_distro(distro="generic", changelog_type="none")
+        distro.changelog_source = {"type": "none"}
+        distro.is_els = False
+        assert _compute_confidence(cves["CVE-2026-31431"], distro, changelog_hit=None) == LOW
 
     def test_trusted_distro_returns_medium(self):
         cves = load_cves()
