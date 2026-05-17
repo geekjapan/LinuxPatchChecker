@@ -6,7 +6,6 @@ from .detector import detect_all
 from .distro import detect_distro
 from .remediation import apply_mitigation, check_root
 from .reporter import exit_code, format_json, format_scan_json, format_text
-from .ssh import scan_hosts
 
 
 def _resolve_hosts(args) -> list:
@@ -55,6 +54,12 @@ def cmd_check(args) -> None:
 
 
 def cmd_scan(args) -> None:
+    try:
+        from .ssh import scan_hosts
+    except ImportError:
+        print("エラー: scanコマンドはpatch-checker-scan.pyzかpip install版で使用してください。", file=sys.stderr)
+        raise SystemExit(2)
+
     hosts = _resolve_hosts(args)
     if not hosts:
         print("エラー: スキャン対象のホストを指定してください。", file=sys.stderr)
