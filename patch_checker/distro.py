@@ -8,17 +8,20 @@ from typing import Optional
 ELS_DISTROS: frozenset = frozenset({
     ("rhel", "7"),
     ("centos", "7"),
-    ("sles", "12"),
     ("ubuntu", "16.04"),
     ("ubuntu", "18.04"),
 })
 
+# Distros where any version_id with this prefix is ELS (e.g., SLES 12.x SP)
+ELS_DISTRO_PREFIXES: frozenset = frozenset({
+    ("sles", "12"),
+})
+
 
 def is_els_distro(distro_id: str, version_id: str) -> bool:
-    # SLES: 12 means any 12.x SP
-    if distro_id == "sles" and version_id.startswith("12"):
+    if (distro_id, version_id) in ELS_DISTROS:
         return True
-    return (distro_id, version_id) in ELS_DISTROS
+    return any(distro_id == d and version_id.startswith(v) for d, v in ELS_DISTRO_PREFIXES)
 
 
 @dataclass(order=True)
